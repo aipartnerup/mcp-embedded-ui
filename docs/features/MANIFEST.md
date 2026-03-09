@@ -1,0 +1,48 @@
+# Feature Manifest: mcp-embedded-ui
+
+## Overview
+
+A lightweight, cross-language embedded Web UI library for any MCP server.
+Provides browser-based tool discovery, schema inspection, and execution
+via a self-contained HTML page served by a thin backend API layer.
+
+## Features
+
+| ID | Feature | Complexity | Priority | Dependencies |
+|----|---------|:----------:|:--------:|:------------:|
+| F1 | [HTML Frontend](html-frontend.md) | M | P0 | None |
+| F2 | [Tool Discovery API](tool-discovery-api.md) | S | P0 | None |
+| F3 | [Tool Execution API](tool-execution-api.md) | S | P0 | F2 |
+| F4 | [Auth Hook](auth-hook.md) | S | P1 | F3 |
+| F5 | [Framework Integration](framework-integration.md) | S | P0 | F2, F3, F4 |
+| F6 | [Try-It Console](try-it-console.md) | M | P1 | F1, F3 |
+
+## Dependency Graph
+
+```
+F1 (HTML Frontend)          F2 (Tool Discovery API)
+       │                         │
+       ▼                         ▼
+F6 (Try-It Console) ──→ F3 (Tool Execution API)
+                               │
+                               ▼
+                         F4 (Auth Hook)
+                               │
+                               ▼
+                         F5 (Framework Integration)
+```
+
+## Recommended Implementation Order
+
+1. **F1** — HTML Frontend (no deps, shared asset across all languages)
+2. **F2** — Tool Discovery API (no deps, core endpoints)
+3. **F3** — Tool Execution API (depends on F2 for tool lookup)
+4. **F4** — Auth Hook (guards F3)
+5. **F6** — Try-It Console (frontend feature, needs F3 backend)
+6. **F5** — Framework Integration (composes everything, final packaging)
+
+## Cross-Language Implementations
+
+| Language | Repository | Status |
+|----------|-----------|--------|
+| Python | [mcp-embedded-ui-python](../../../mcp-embedded-ui-python) | Reference implementation |

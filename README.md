@@ -118,4 +118,4 @@ See [PROTOCOL.md](docs/PROTOCOL.md) for the full specification including request
 
 ## License
 
-MIT
+Apache-2.0

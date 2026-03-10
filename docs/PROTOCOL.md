@@ -7,7 +7,7 @@ Cross-language implementation reference for the MCP Embedded UI.
 ```
 ┌─────────────────────────────────────────────┐
 │  Browser (HTML/JS — self-contained)         │
-│  Fetches: /meta, /tools, /tools/{name},     │
+│  Fetches: /tools, /tools/{name},             │
 │           /tools/{name}/call                │
 └──────────────┬──────────────────────────────┘
                │ HTTP (JSON)
@@ -34,19 +34,6 @@ with the configured `title`). The `title` must be HTML-escaped before
 injection.
 
 **Response**: `text/html`
-
-### `GET /meta`
-
-Returns UI configuration. Used by the frontend to detect execution status
-without a probe request.
-
-**Response** (`application/json`):
-```json
-{
-  "title": "MCP Tool Explorer",
-  "allow_execute": true
-}
-```
 
 ### `GET /tools`
 
@@ -124,7 +111,9 @@ Execute a tool. Request body is the tool's input arguments.
 ```
 
 - `_meta` is **omitted** when `trace_id` is null/empty.
-- `content` follows the MCP `TextContent` format.
+- `content` items follow MCP content types: `TextContent` (`type: "text"`),
+  `ImageContent` (`type: "image"`, with `mimeType` and base64 `data`), or
+  other types. The frontend renders each type appropriately.
 
 ## Abstractions (language-specific mapping)
 
@@ -143,14 +132,33 @@ Provides the list of tools. Can be static or dynamic.
 
 Executes a tool by name with the given arguments.
 
-**Signature**: `(name: string, args: dict) -> (content, is_error, trace_id)`
+**Signature**: `(name, args[, request]) -> (content, is_error, trace_id)`
 
-| Language | Implementation |
-|----------|---------------|
-| Python | `async def handler(name, args) -> tuple[list, bool, str \| None]` |
-| TypeScript | `(name: string, args: Record) => Promise<[Content[], boolean, string?]>` |
-| Go | `HandleCall(name string, args map[string]any) ([]Content, bool, string, error)` |
-| Rust | `async fn handle_call(name: &str, args: Value) -> Result<CallResult>` |
+The handler accepts an **optional** third parameter — the HTTP request
+object. Implementations should auto-detect whether the handler accepts 2 or
+3 parameters (e.g. via `inspect.signature` in Python, `Function.length` in
+JS). This allows integrations to access request context (headers, identity,
+etc.) without breaking existing 2-parameter handlers.
+
+| Language | 2-param (basic) | 3-param (with request) |
+|----------|----------------|----------------------|
+| Python | `async def handler(name, args) -> tuple[list, bool, str \| None]` | `async def handler(name, args, request) -> tuple[list, bool, str \| None]` |
+| TypeScript | `(name: string, args: Record) => Promise<[Content[], boolean, string?]>` | `(name: string, args: Record, req: Request) => Promise<[Content[], boolean, string?]>` |
+| Go | `HandleCall(name string, args map[string]any) ([]Content, bool, string, error)` | `HandleCall(ctx context.Context, name string, args map[string]any) ([]Content, bool, string, error)` ¹ |
+| Rust | `async fn handle_call(name: &str, args: Value) -> Result<CallResult>` | `async fn handle_call(name: &str, args: Value, req: &Request) -> Result<CallResult>` |
+
+¹ Go uses `context.Context` idiomatically; retrieve the request via `RequestFromContext(ctx)`.
+
+**Detection logic** (Python example):
+```python
+import inspect
+
+sig = inspect.signature(handle_call)
+if len(sig.parameters) >= 3:
+    content, is_error, trace_id = await handle_call(name, args, request)
+else:
+    content, is_error, trace_id = await handle_call(name, args)
+```
 
 ### AuthHook
 
@@ -183,7 +191,6 @@ JavaScript. No external dependencies, no build step.
 
 **Key behaviors**:
 - Uses `window.location.pathname` as base URL for all API calls
-- Fetches `/meta` on load to determine `allow_execute`
 - Fetches `/tools` on load to render the tool list
 - Lazy-loads tool detail on expand (fetches `/tools/{name}`)
 - `esc()` function escapes all user-provided text before DOM insertion
@@ -191,13 +198,15 @@ JavaScript. No external dependencies, no build step.
 - Generates copyable cURL commands after execution
 - Result/Raw MCP tab toggle for response viewing
 
-**Template variable**: `{{TITLE}}` — replaced with HTML-escaped title at
-render time. Appears in `<title>` and `<h1>`.
+**Template variables**:
+- `{{TITLE}}` — replaced with HTML-escaped title at render time. Appears in `<title>` and `<h1>`.
+- `{{ALLOW_EXECUTE}}` — replaced with `true` or `false` (JS literal, no quotes). **Defaults to `true`**. Set to `false` to disable tool execution — must be enforced at the handler level, not just the UI.
+- `{{PROJECT_LINK}}` — replaced with a footer link fragment. Empty string if `project_name` is not configured. If `project_name` is set without `project_url`, renders as plain text. If both are set, renders as a clickable link. Both values must be HTML-escaped before injection.
 
 ## Security Checklist
 
 - [ ] HTML-escape `title` before template injection (prevent XSS)
 - [ ] Do not leak auth error details in 401 responses
-- [ ] `allow_execute=false` must block at the handler level, not just UI
+- [ ] `allow_execute` must block at the handler level, not just the UI; consider setting to `false` in production if execution is not needed
 - [ ] Tool `name` from URL path params must be validated against known tools
 - [ ] `esc()` in frontend must escape all user content before `innerHTML`

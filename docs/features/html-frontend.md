@@ -26,12 +26,13 @@ template variable.
 
 ### FR-1: Page Structure
 
-The page renders four top-level elements in order:
+The page renders five top-level elements in order:
 
 1. **Title heading** (`<h1>`) -- displays the server name.
 2. **Auth bar** -- Bearer token input with status indicator.
-3. **Loading indicator** -- shown while the tool list is being fetched.
-4. **Tool list** (`<ul>`) -- populated from `GET {base}/tools`.
+3. **Search box** -- text input for filtering tools by name or description.
+4. **Loading indicator** -- shown while the tool list is being fetched.
+5. **Tool list** (`<ul>`) -- populated from `GET {base}/tools`.
 
 ### FR-2: Tool List
 
@@ -88,15 +89,28 @@ This strips a trailing slash so that relative paths like
 `base + '/tools'` resolve correctly regardless of whether the page URL
 ends with `/`.
 
-### FR-7: Template Variable
+### FR-7: Template Variables
 
-The `{{TITLE}}` placeholder appears in two locations:
+Two template variables are replaced server-side before serving:
+
+**`{{TITLE}}`** appears in two locations:
 
 1. `<title>{{TITLE}}</title>` -- the browser tab title.
 2. `<h1>{{TITLE}}</h1>` -- the visible page heading.
 
 The backend replaces both occurrences with the configured server title
 **after HTML-escaping** the value (see Security section).
+
+**`{{ALLOW_EXECUTE}}`** appears in the JavaScript initialization:
+
+```js
+var executeEnabled = {{ALLOW_EXECUTE}};
+```
+
+Replaced with the JS literal `true` or `false` (no quotes). **Defaults to
+`true`**. Set to `false` to disable tool execution -- must be enforced at
+the handler level, not just the UI. This eliminates the need for a separate
+`/meta` endpoint.
 
 ## Security
 
@@ -137,10 +151,11 @@ TypeScript).
 - A language-specific backend only needs to:
   1. Read the HTML template (or use an embedded copy).
   2. Replace `{{TITLE}}` with the HTML-escaped server title.
-  3. Serve the resulting string as `text/html` at `GET /`.
+  3. Replace `{{ALLOW_EXECUTE}}` with `true` or `false`.
+  4. Serve the resulting string as `text/html` at `GET /`.
 - No language-specific logic exists in the frontend. All behavioral
-  differences (auth enforcement, execution gating) are handled by the
-  backend API responses the frontend consumes.
+  differences (auth enforcement, execution gating) are handled by
+  template variables and backend API responses.
 
 ## Test Criteria
 

@@ -2,21 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/).
+## [0.2.0] - 2026-03-10
 
-## [0.1.0] - 2026-03-09
+### Removed
+
+- **`/meta` endpoint** — replaced by `{{ALLOW_EXECUTE}}` HTML template variable. Config is now baked into the HTML at render time, eliminating a runtime HTTP round-trip.
 
 ### Added
 
-- Protocol specification (`docs/PROTOCOL.md`) — endpoints, data shapes, security checklist
-- Self-contained HTML template (`docs/explorer.html`) with `{{TITLE}}` placeholder
-- Feature specs for cross-language implementation:
-  - HTML Frontend — self-contained page with XSS-safe escaping
-  - Tool Discovery API — `GET /tools`, `GET /tools/{name}`
-  - Tool Execution API — `POST /tools/{name}/call` with MCP CallToolResult format
-  - Auth Hook — sync/async context manager pattern for request authorization
-  - Framework Integration — 3-tier API (routes / app / mount)
-  - Try-It Console — in-browser tool execution with cURL export
-- Feature manifest with dependency graph and recommended implementation order
-- Cross-language abstraction mapping tables (Python, TypeScript, Go, Rust)
-- Security checklist (XSS, auth leak, execution guard, input validation)
+- **`{{ALLOW_EXECUTE}}` template variable** — defaults to `true`; set to `false` to disable tool execution.
+- **`{{PROJECT_LINK}}` template variable** — optional footer link for downstream projects (`project_name` + `project_url`).
+- **ToolCallHandler 3-param support** — handler can optionally accept a third parameter (HTTP request) for accessing headers, identity, etc. Auto-detected via signature inspection.
+- **Tool search/filter** — search input in the HTML frontend to filter tools by name or description.
+- **Multi-content-type rendering** — frontend now renders `ImageContent` (base64 images) alongside `TextContent`.
+- **Execution time display** — shows elapsed time after tool execution.
+- **cURL escaping fix** — proper escaping of single quotes in generated cURL commands.
+- **"Powered by mcp-embedded-ui" footer** — subtle branding link for discoverability.
+- **ROADMAP.md** — documents deferred features (tool grouping, dark mode, request history).
+- **TypeScript quick start** and package links in README.
+- **TypeScript** added to MANIFEST.md cross-language implementations table.
+
+### Changed
+
+- Protocol endpoint count reduced from 5 to 4.
+- `allow_execute` default aligned to `true` across PROTOCOL.md, feature specs, and both implementations.
+- F5 cross-language mapping updated to reflect TypeScript's actual API (`createHandler`, `createNodeHandler`).
+- README updated with language implementation table including PyPI/npm install links.
+
+## [0.1.0] - 2025-12-01
+
+### Added
+
+- Initial protocol specification and shared HTML template.
+- Feature specs: HTML Frontend, Tool Discovery API, Tool Execution API, Auth Hook, Framework Integration, Try-It Console.
+- MkDocs documentation site configuration.

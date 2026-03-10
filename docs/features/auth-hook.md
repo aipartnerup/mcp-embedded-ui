@@ -51,7 +51,6 @@ The following endpoints are **not** guarded:
 
 - `GET /tools` -- tool list (public discovery).
 - `GET /tools/{name}` -- tool detail (public discovery).
-- `GET /meta` -- server metadata.
 - `GET /` -- HTML frontend.
 
 This is intentional: tool discovery is public, execution is gated.
@@ -161,4 +160,4 @@ def apcore_auth_hook(request):
 | TC-3 | Valid async auth hook allows tool execution. | Integration test: provide async CM auth hook, call with valid credentials, assert 200. |
 | TC-4 | Invalid async auth hook returns 401. | Integration test: provide async CM auth hook, call with invalid credentials, assert 401. |
 | TC-5 | 401 response does NOT contain exception detail/message. | Assert response body equals `{"error": "Unauthorized"}` exactly; no traceback, no exception text. |
-| TC-6 | Auth hook is not called for GET endpoints. | Integration test: call `GET /tools`, `GET /tools/{name}`, `GET /meta` without credentials, assert 200 and verify hook was not invoked. |
+| TC-6 | Auth hook is not called for GET endpoints. | Integration test: call `GET /tools`, `GET /tools/{name}`, `GET /` without credentials, assert 200 and verify hook was not invoked. |

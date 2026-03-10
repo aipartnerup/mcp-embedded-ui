@@ -46,3 +46,4 @@ F6 (Try-It Console) ──→ F3 (Tool Execution API)
 | Language | Repository | Status |
 |----------|-----------|--------|
 | Python | [mcp-embedded-ui-python](../../../mcp-embedded-ui-python) | Reference implementation |
+| TypeScript | [mcp-embedded-ui-typescript](../../../mcp-embedded-ui-typescript) | v0.2.0 |

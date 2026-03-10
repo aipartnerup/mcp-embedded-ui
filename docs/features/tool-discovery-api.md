@@ -11,33 +11,16 @@
 
 ## Overview
 
-Three read-only HTTP endpoints that expose MCP server metadata and tool
-definitions to the embedded frontend. The endpoints are backed by a
-`ToolsProvider` abstraction that supports static lists, sync callables,
-and async callables across all target languages.
+Two read-only HTTP endpoints that expose tool definitions to the embedded
+frontend. The endpoints are backed by a `ToolsProvider` abstraction that
+supports static lists, sync callables, and async callables across all
+target languages.
+
+Server-level metadata (`title`, `allow_execute`) is injected into the HTML
+via template variables (`{{TITLE}}`, `{{ALLOW_EXECUTE}}`) at render time,
+eliminating the need for a separate metadata endpoint.
 
 ## Endpoints
-
-### `GET /meta`
-
-Returns server-level metadata used by the frontend to configure itself
-without probe requests.
-
-**Response** `200 OK` `application/json`
-
-```json
-{
-  "title": "My MCP Server",
-  "allow_execute": true
-}
-```
-
-| Field           | Type   | Description                                      |
-|-----------------|--------|--------------------------------------------------|
-| `title`         | string | Human-readable server name                       |
-| `allow_execute` | bool   | Whether the execution endpoint (F3) is enabled   |
-
----
 
 ### `GET /tools`
 
@@ -178,7 +161,6 @@ than serialized as `null`.
 
 ## Test Criteria
 
-- [ ] `GET /meta` returns correct `title` and `allow_execute` values.
 - [ ] `GET /tools` returns all tools with correct fields.
 - [ ] `GET /tools` returns `annotations` only when present (key is
       omitted, not `null`).

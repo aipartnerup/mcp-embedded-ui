@@ -75,6 +75,9 @@
   .resp-tab.active { background: #555; color: #fff; border-color: #555; }
   .resp-pane { display: none; }
   .resp-pane.active { display: block; }
+  .tool-search { width: 100%; padding: 8px 12px; font-size: 0.9rem; border: 1px solid #ddd;
+                 border-radius: 6px; margin-bottom: 12px; font-family: inherit; }
+  .tool-search:focus { outline: none; border-color: #888; }
 </style>
 </head>
 <body>
@@ -84,6 +87,7 @@
   <input type="text" id="auth-token" placeholder="Bearer eyJhbGci...">
   <span class="auth-status auth-unlocked" id="auth-status">No token</span>
 </div>
+<input type="text" class="tool-search" id="tool-search" placeholder="Filter tools...">
 <div id="loading">Loading tools...</div>
 <ul class="tool-list" id="tools"></ul>
 <script>
@@ -93,7 +97,7 @@
   var loadingEl = document.getElementById('loading');
   var authInput = document.getElementById('auth-token');
   var authStatus = document.getElementById('auth-status');
-  var executeEnabled = null;
+  var executeEnabled = {{ALLOW_EXECUTE}};
 
   function getAuthHeaders() {
     var token = (authInput.value || '').trim();
@@ -113,6 +117,19 @@
     }
   }
   authInput.addEventListener('input', updateAuthStatus);
+
+  var searchInput = document.getElementById('tool-search');
+  searchInput.addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    var items = toolsEl.querySelectorAll('.tool-item');
+    for (var i = 0; i < items.length; i++) {
+      var li = items[i];
+      var name = (li.getAttribute('data-tool') || '').toLowerCase();
+      var desc = li.querySelector('.tool-desc');
+      var descText = desc ? desc.textContent.toLowerCase() : '';
+      li.style.display = (name.indexOf(q) !== -1 || descText.indexOf(q) !== -1) ? '' : 'none';
+    }
+  });
 
   function esc(s) {
     var d = document.createElement('div');
@@ -155,11 +172,6 @@
     if (annotations.openWorldHint === false) parts.push('<span class="hint">closedWorld</span>');
     return parts.join('');
   }
-
-  // Fetch meta info to determine execution status
-  fetch(base + '/meta').then(function(r) { return r.json(); }).then(function(meta) {
-    executeEnabled = meta.allow_execute;
-  }).catch(function() {});
 
   fetch(base + '/tools', {headers: getAuthHeaders()})
     .then(function(r) { return r.json(); })
@@ -268,7 +280,7 @@
 
     var bodyStr = JSON.stringify(inputs);
     var callUrl = window.location.origin + base + '/tools/' + encodeURIComponent(name) + '/call';
-    var curlBody = bodyStr.replace(/'/g, "'\\''" );
+    var curlBody = bodyStr.replace(/'/g, "'\\''");
     var authToken = (authInput.value || '').trim();
     var curlLines = ["curl -X POST '" + callUrl + "' \\"];
     curlLines.push("  -H 'Content-Type: application/json' \\");
@@ -280,6 +292,7 @@
     var curlCmd = curlLines.join("\n");
 
     var fetchHeaders = Object.assign({'Content-Type': 'application/json'}, getAuthHeaders());
+    var t0 = Date.now();
     fetch(base + '/tools/' + encodeURIComponent(name) + '/call', {
       method: 'POST',
       headers: fetchHeaders,
@@ -307,10 +320,11 @@
     })
     .then(function(result) {
       if (!result) return;
+      var elapsed = Date.now() - t0;
       btn.disabled = false;
       btn.textContent = 'Execute';
       var data = result.data;
-      var html = '';
+      var html = '<span style="color:#888;font-size:0.8rem">Completed in ' + elapsed + 'ms</span>';
 
       html += '<div class="curl-section">' +
         '<span class="schema-label">cURL</span>' +
@@ -322,12 +336,21 @@
         html += '<span class="schema-label result-error">Response &mdash; Error</span>' +
           '<pre>' + esc(errText) + '</pre>';
       } else {
-        var texts = (data.content || []).filter(function(c) { return c.type === 'text'; });
-        var display = texts.map(function(c) {
-          try { return JSON.parse(c.text); } catch(e) { return c.text; }
-        });
-        var output = display.length === 1 ? display[0] : display;
-        var friendlyJson = JSON.stringify(output, null, 2);
+        var contents = data.content || [];
+        var friendlyHtml = '';
+        for (var ci = 0; ci < contents.length; ci++) {
+          var c = contents[ci];
+          if (c.type === 'image') {
+            friendlyHtml += '<img src="data:' + esc(c.mimeType || 'image/png') +
+              ';base64,' + esc(c.data) + '" style="max-width:100%;margin:4px 0;border-radius:4px">';
+          } else if (c.type === 'text') {
+            var parsed;
+            try { parsed = JSON.parse(c.text); } catch(e) { parsed = c.text; }
+            friendlyHtml += '<pre>' + esc(typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2)) + '</pre>';
+          } else {
+            friendlyHtml += '<pre>' + esc(JSON.stringify(c, null, 2)) + '</pre>';
+          }
+        }
         var rawJson = JSON.stringify(data, null, 2);
 
         html += '<div class="resp-header">' +
@@ -336,7 +359,7 @@
           '<span class="resp-tab active" data-tab="friendly">Result</span>' +
           '<span class="resp-tab" data-tab="raw">Raw MCP</span>' +
           '</span></div>' +
-          '<pre class="resp-pane active" data-pane="friendly">' + esc(friendlyJson) + '</pre>' +
+          '<div class="resp-pane active" data-pane="friendly">' + friendlyHtml + '</div>' +
           '<pre class="resp-pane" data-pane="raw">' + esc(rawJson) + '</pre>';
       }
 
@@ -384,5 +407,8 @@
   }
 })();
 </script>
+<footer style="margin-top:32px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:0.75rem;color:#aaa">
+  Powered by <a href="https://github.com/aipartnerup/mcp-embedded-ui" style="color:#888;text-decoration:none" target="_blank" rel="noopener">mcp-embedded-ui</a>{{PROJECT_LINK}}
+</footer>
 </body>
 </html>

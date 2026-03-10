@@ -12,9 +12,9 @@ in two complementary views (parsed result and raw MCP envelope). A cURL
 command is generated for every execution so users can reproduce calls
 outside the UI.
 
-Execution can be disabled server-side. The frontend detects this via the
-`/meta` endpoint and gracefully replaces the console with a disabled
-message.
+Execution can be disabled server-side. The frontend reads the
+`{{ALLOW_EXECUTE}}` template variable (injected at render time) and
+gracefully replaces the console with a disabled message.
 
 ## Scope
 
@@ -22,7 +22,7 @@ message.
 - Execute button with loading state and disabled-execution detection.
 - Result display with two tabs: Result and Raw MCP.
 - cURL command generation with copy-to-clipboard.
-- Execution-disabled detection via `GET /meta` (`allow_execute` flag).
+- Execution-disabled detection via `{{ALLOW_EXECUTE}}` template variable.
 - 401/403 error handling in the UI.
 
 ## Functional Requirements
@@ -60,16 +60,17 @@ whose keys and default values are derived from `inputSchema.properties`:
 
 ### FR-3: Execution Disabled Detection
 
-The frontend fetches `GET {base}/meta` on page load.
+The `{{ALLOW_EXECUTE}}` template variable is replaced with a JS literal
+(`true` or `false`) at render time, defaulting to `false`. The frontend
+reads this value synchronously on page load.
 
-- If the response contains `allow_execute === false`, the Try-It console
-  section is replaced with a disabled message (e.g.,
-  "Tool execution is disabled on this server.").
+- If `executeEnabled === false`, the Try-It console section is replaced
+  with a disabled message (e.g.,
+  "Tool execution is disabled. Launch with --allow-execute to enable.").
 - As a fallback, if a `POST /tools/{name}/call` request returns HTTP
   **403**, the Try-It section is also replaced with the disabled message.
-- A 403 from an execution attempt is treated identically to the `/meta`
-  signal -- the console is permanently replaced for the remainder of the
-  page session.
+- A 403 from an execution attempt is treated identically -- the console
+  is permanently replaced for the remainder of the page session.
 
 ### FR-4: Result Display
 
@@ -157,10 +158,12 @@ refreshing the page clears the token.
   is identical across all language backends.
 - The backend only needs to serve the HTML (F1) and implement the
   following endpoints:
-  - `GET /meta` -- returns `{ "allow_execute": bool, ... }`.
   - `GET /tools` -- tool list.
   - `GET /tools/{name}` -- tool detail with `inputSchema`.
   - `POST /tools/{name}/call` -- tool execution.
+- The `{{ALLOW_EXECUTE}}` template variable is injected server-side
+  (same mechanism as `{{TITLE}}`), eliminating the need for a `/meta`
+  endpoint.
 - No language-specific code is required for this feature.
 
 ## Test Criteria
@@ -178,5 +181,5 @@ refreshing the page clears the token.
 | TC-9 | cURL command includes `Authorization: Bearer <token>` header when a token is set. | UI test: set token, execute, assert cURL output contains auth header. |
 | TC-10 | cURL command omits auth header when no token is set. | UI test: clear token, execute, assert cURL output has no auth header. |
 | TC-11 | Copy button shows "Copied!" feedback for 1.5 seconds. | UI test: click copy, assert button text change and revert timing. |
-| TC-12 | `GET /meta` with `allow_execute: false` replaces Try-It section with disabled message on page load. | UI test: mock `/meta` response, assert console is not rendered. |
+| TC-12 | `{{ALLOW_EXECUTE}}` set to `false` replaces Try-It section with disabled message on page load. | UI test: render HTML with `{{ALLOW_EXECUTE}}` = `false`, assert console is not rendered. |
 | TC-13 | Invalid JSON in textarea shows inline error and does not send request. | UI test: enter malformed JSON, click Execute, assert error message and no network request. |

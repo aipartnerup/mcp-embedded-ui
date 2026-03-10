@@ -49,28 +49,34 @@ the request.
 ## ToolCallHandler Abstraction
 
 The handler is an asynchronous function provided by the host application. It
-receives the tool name and parsed arguments, and returns a three-element tuple.
+receives the tool name and parsed arguments, with an **optional** third
+parameter for the HTTP request object, and returns a three-element tuple.
 
 **Signature** (language-neutral):
 
 ```
-async (name: string, args: dict) -> (content, is_error, trace_id)
+async (name, args[, request]) -> (content, is_error, trace_id)
 ```
+
+The optional `request` parameter allows handlers to access HTTP context
+(headers, identity, etc.) without breaking existing 2-parameter handlers.
+Implementations should auto-detect whether the handler accepts 2 or 3
+parameters (e.g. via `inspect.signature` in Python, `Function.length` in JS).
 
 | Return Element | Type | Description |
 |----------------|------|-------------|
-| `content` | `list[TextContent]` | List of MCP TextContent objects: `[{"type": "text", "text": "..."}]` |
+| `content` | `list[Content]` | List of MCP content objects (`TextContent`, `ImageContent`, etc.) |
 | `is_error` | `boolean` | `true` if the tool invocation represents a logical error |
 | `trace_id` | `string \| null` | Optional trace identifier; `null` or empty string means omit `_meta` |
 
 ### Cross-Language Type Mapping
 
-| Language | ToolCallHandler Type |
-|----------|---------------------|
-| Python | `async def(name: str, args: dict) -> tuple[list, bool, str \| None]` |
-| TypeScript | `(name: string, args: Record<string, unknown>) => Promise<[Content[], boolean, string?]>` |
-| Go | `HandleCall(name string, args map[string]any) ([]Content, bool, string, error)` |
-| Rust | `async fn(name: &str, args: Value) -> Result<CallResult>` |
+| Language | 2-param (basic) | 3-param (with request) |
+|----------|----------------|----------------------|
+| Python | `async def(name: str, args: dict) -> tuple[list, bool, str \| None]` | `async def(name: str, args: dict, request: Request) -> tuple[list, bool, str \| None]` |
+| TypeScript | `(name: string, args: Record<string, unknown>) => Promise<[Content[], boolean, string?]>` | `(name: string, args: Record<string, unknown>, req: Request) => Promise<[Content[], boolean, string?]>` |
+| Go | `HandleCall(name string, args map[string]any) ([]Content, bool, string, error)` | `HandleCall(ctx context.Context, name string, args map[string]any) ([]Content, bool, string, error)` |
+| Rust | `async fn(name: &str, args: Value) -> Result<CallResult>` | `async fn(name: &str, args: Value, req: &Request) -> Result<CallResult>` |
 
 ## Response Format
 
@@ -123,8 +129,10 @@ and logged server-side; its message is surfaced in the response.
 3. **Exception safety**: Handler exceptions must be caught, logged, and returned
    as an `isError=true` response. They must never propagate as unhandled 500
    errors with framework-default error pages.
-4. **Content format**: The `content` array always contains MCP `TextContent`
-   objects (`{"type": "text", "text": "..."}`).
+4. **Content format**: The `content` array contains MCP content objects.
+   Supported types include `TextContent` (`{"type": "text", "text": "..."}`),
+   `ImageContent` (`{"type": "image", "mimeType": "...", "data": "..."}`),
+   and other MCP content types. The frontend renders each type appropriately.
 
 ## Security Considerations
 

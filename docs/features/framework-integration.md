@@ -174,14 +174,14 @@ bump following the release that introduces `build_ui_routes()`.
 | Language   | `build_ui_routes`              | `create_app`                   | `create_mount`                   |
 |------------|--------------------------------|--------------------------------|----------------------------------|
 | Python     | `list[Route]`                  | `ASGIApp` (Starlette)          | `Mount`                          |
-| TypeScript | Express `Router`               | `http.Server` / Hono app       | `app.use(prefix, ...)`           |
+| TypeScript | `Route[]` (`buildUIRoutes`)    | `createHandler()` → Web Fetch handler | `createNodeHandler({prefix})` → Node handler |
 | Go         | `[]Route` / `http.Handler`     | `http.Handler`                 | `mux.Handle(prefix, ...)`        |
 | Rust       | `axum::Router`                 | `axum::Router`                 | `.nest(prefix, ...)`             |
 
 ## Test Criteria
 
 - [ ] `create_app` returns a working ASGI/HTTP app that serves
-      `GET /tools` and `GET /meta` correctly.
+      `GET /` (HTML with template variables) and `GET /tools` correctly.
 - [ ] `create_mount` defaults to `/explorer` prefix when no prefix
       is supplied.
 - [ ] `create_mount` with a custom prefix (e.g., `/ui`) mounts the

@@ -35,16 +35,17 @@ No build step. No CDN. No external dependencies. The entire UI is a single HTML 
 
 ## This repo vs. language repos
 
-| Repository | What it contains |
-|------------|-----------------|
-| **mcp-embedded-ui** (this repo) | Protocol spec, shared HTML template, feature specs — the "source of truth" |
-| [mcp-embedded-ui-python](https://github.com/aipartnerup/mcp-embedded-ui-python) | Python implementation (`pip install mcp-embedded-ui`) |
+| Repository | Package | Install |
+|------------|---------|---------|
+| **mcp-embedded-ui** (this repo) | — | Protocol spec, shared HTML template, feature specs — the "source of truth" |
+| [mcp-embedded-ui-python](https://github.com/aipartnerup/mcp-embedded-ui-python) | [PyPI](https://pypi.org/project/mcp-embedded-ui/) | `pip install mcp-embedded-ui` |
+| [mcp-embedded-ui-typescript](https://github.com/aipartnerup/mcp-embedded-ui-typescript) | [npm](https://www.npmjs.com/package/mcp-embedded-ui) | `npm install mcp-embedded-ui` |
 
 This repo does **not** contain runnable code. It defines *what* to build. Language repos contain *how* to build it.
 
-## Quick start (for users)
+## Quick start
 
-Pick your language and follow the language-specific README:
+Pick your language and install:
 
 ### Python
 
@@ -61,18 +62,34 @@ app.routes.append(create_mount(tools=my_tools, handle_call=my_handler))
 # Visit http://localhost:8000/explorer/
 ```
 
+### TypeScript
+
+```bash
+npm install mcp-embedded-ui
+```
+
+```typescript
+import http from "node:http";
+import { createNodeHandler } from "mcp-embedded-ui";
+
+const handler = createNodeHandler(myTools, myHandler, {
+  prefix: "/explorer",
+});
+http.createServer(handler).listen(8000);
+// Visit http://localhost:8000/explorer/
+```
+
 ### Other languages
 
 Coming soon. See [How to Add a New Language](#how-to-add-a-new-language) to contribute.
 
 ## Protocol overview
 
-The library exposes 5 HTTP endpoints under a configurable prefix (default `/explorer`):
+The library exposes 4 HTTP endpoints under a configurable prefix (default `/explorer`):
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` | Self-contained HTML explorer page |
-| GET | `/meta` | JSON config — `{ title, allow_execute }` |
 | GET | `/tools` | Summary list of all tools |
 | GET | `/tools/{name}` | Full tool detail with `inputSchema` |
 | POST | `/tools/{name}/call` | Execute a tool, returns MCP `CallToolResult` |
@@ -114,7 +131,7 @@ See [PROTOCOL.md](docs/PROTOCOL.md) for the full specification including request
 - **Framework-agnostic** — output is standard HTTP routes. Mount in any web framework.
 - **Cross-language consistency** — same endpoints, same response shapes, same HTML across all implementations.
 - **Secure by default** — XSS escaping, auth error sanitization, server-side execution guard.
-- **Minimal surface** — 5 endpoints, 3 abstractions (`ToolsProvider`, `ToolCallHandler`, `AuthHook`). Nothing more.
+- **Minimal surface** — 4 endpoints, 3 abstractions (`ToolsProvider`, `ToolCallHandler`, `AuthHook`). Nothing more.
 
 ## License
 

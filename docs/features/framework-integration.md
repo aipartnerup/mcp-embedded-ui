@@ -41,7 +41,7 @@ def build_ui_routes(
     tools: ToolsProvider,
     handle_call: ToolCallHandler,
     *,
-    allow_execute: bool = True,
+    allow_execute: bool = False,
     auth_hook: AuthHook | None = None,
     title: str = "MCP Tool Explorer",
 ) -> list[Route]:
@@ -67,7 +67,7 @@ def create_app(
     tools: ToolsProvider,
     handle_call: ToolCallHandler,
     *,
-    allow_execute: bool = True,
+    allow_execute: bool = False,
     auth_hook: AuthHook | None = None,
     title: str = "MCP Tool Explorer",
 ) -> ASGIApp:
@@ -96,7 +96,7 @@ def create_mount(
     *,
     tools: ToolsProvider,
     handle_call: ToolCallHandler,
-    allow_execute: bool = True,
+    allow_execute: bool = False,
     auth_hook: AuthHook | None = None,
     title: str = "MCP Tool Explorer",
 ) -> Mount:
@@ -114,7 +114,7 @@ All three factory functions accept the same configuration parameters:
 |-----------------|-----------------------|-----------------------|------------------------------------|
 | `tools`         | `ToolsProvider`       | _required_            | Static list or callable            |
 | `handle_call`   | `ToolCallHandler`     | _required_            | Execution callback                 |
-| `allow_execute` | `bool`                | `true`                | Enable/disable execution endpoint  |
+| `allow_execute` | `bool`                | `false`               | Enable/disable execution endpoint  |
 | `auth_hook`     | `AuthHook \| null`    | `null`                | Auth guard (see F4)                |
 | `title`         | `string`              | `"MCP Tool Explorer"` | Page title (substituted into HTML) |
 

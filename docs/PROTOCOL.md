@@ -200,7 +200,7 @@ JavaScript. No external dependencies, no build step.
 
 **Template variables**:
 - `{{TITLE}}` — replaced with HTML-escaped title at render time. Appears in `<title>` and `<h1>`.
-- `{{ALLOW_EXECUTE}}` — replaced with `true` or `false` (JS literal, no quotes). **Defaults to `true`**. Set to `false` to disable tool execution — must be enforced at the handler level, not just the UI.
+- `{{ALLOW_EXECUTE}}` — replaced with `true` or `false` (JS literal, no quotes). **Defaults to `false`**. Set to `true` to enable tool execution — must be enforced at the handler level, not just the UI.
 - `{{PROJECT_LINK}}` — replaced with a footer link fragment. Empty string if `project_name` is not configured. If `project_name` is set without `project_url`, renders as plain text. If both are set, renders as a clickable link. Both values must be HTML-escaped before injection.
 
 ## Security Checklist

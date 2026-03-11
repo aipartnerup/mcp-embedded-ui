@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-03-11
+
+### Added
+
+- **Dark mode** — theme toggle button with light/dark switching, `localStorage` persistence, and system preference auto-detection. FOUC prevention via inline `<head>` script.
+
+### Changed
+
+- **`allow_execute` default changed to `false`** — secure by default; callers must explicitly opt in with `allow_execute=True` to enable tool execution.
+- All hardcoded CSS colors replaced with CSS custom properties for theme support.
+- Theme toggle script isolated in separate `<script>` block from main app logic.
+- PROTOCOL.md, feature specs, and ROADMAP.md updated to reflect new defaults.
+
 ## [0.2.0] - 2026-03-10
 
 ### Removed

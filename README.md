@@ -3,8 +3,9 @@
 A cross-language specification and shared assets for embedding a browser-based tool explorer into any [MCP](https://modelcontextprotocol.io/) (Model Context Protocol) server.
 
 **Official SDKs:** 
-[**Python**](https://github.com/aipartnerup/mcp-embedded-ui-python) | 
-[**TypeScript**](https://github.com/aipartnerup/mcp-embedded-ui-typescript) 
+[**Python** (PyPI)](https://github.com/aipartnerup/mcp-embedded-ui-python) | 
+[**TypeScript** (npm)](https://github.com/aipartnerup/mcp-embedded-ui-typescript) |
+[**Go** (Coming Soon)]
 
 ---
 
@@ -54,8 +55,6 @@ A cross-language specification and shared assets for embedding a browser-based t
 
 ## What is this?
 
-## What is this?
-
 If you build an MCP server, your users interact with tools through JSON — no visual feedback, no schema browser, no quick way to test. **mcp-embedded-ui** solves this by defining a standard set of HTTP endpoints and a self-contained HTML page that any MCP server can serve, in any language.
 
 ```
@@ -84,14 +83,6 @@ The embedded explorer page provides:
 - **Auth support** — enter a Bearer token in the UI, sent with all requests.
 
 No build step. No CDN. No external dependencies. The entire UI is a single HTML string embedded in your server binary/package.
-
-## Language Implementations
-
-| Language | Repository | Package |
-|----------|------------|---------|
-| **Python** | [mcp-embedded-ui-python](https://github.com/aipartnerup/mcp-embedded-ui-python) | [PyPI](https://pypi.org/project/mcp-embedded-ui/) |
-| **TypeScript** | [mcp-embedded-ui-typescript](https://github.com/aipartnerup/mcp-embedded-ui-typescript) | [npm](https://www.npmjs.com/package/mcp-embedded-ui) |
-| **Go** | *Coming Soon* | — |
 
 ## Documentation for Developers
 

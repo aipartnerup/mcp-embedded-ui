@@ -2,6 +2,58 @@
 
 A cross-language specification and shared assets for embedding a browser-based tool explorer into any [MCP](https://modelcontextprotocol.io/) (Model Context Protocol) server.
 
+**Official SDKs:** 
+[**Python**](https://github.com/aipartnerup/mcp-embedded-ui-python) | 
+[**TypeScript**](https://github.com/aipartnerup/mcp-embedded-ui-typescript) 
+
+---
+
+## Quick Start
+
+=== "Python"
+    **SDK:** [aipartnerup/mcp-embedded-ui-python](https://github.com/aipartnerup/mcp-embedded-ui-python)
+
+    ```bash
+    pip install mcp-embedded-ui
+    ```
+
+    ```python
+    from fastapi import FastAPI
+    from mcp_embedded_ui import create_mount
+
+    app = FastAPI()
+
+    # Mount the explorer UI to your FastAPI app
+    app.routes.append(create_mount(
+        tools=my_tools,
+        handle_call=my_handler,
+        prefix="/explorer"
+    ))
+
+    # Visit http://localhost:8000/explorer/
+    ```
+
+=== "TypeScript"
+    **SDK:** [aipartnerup/mcp-embedded-ui-typescript](https://github.com/aipartnerup/mcp-embedded-ui-typescript)
+
+    ```bash
+    npm install mcp-embedded-ui
+    ```
+
+    ```typescript
+    import http from "node:http";
+    import { createNodeHandler } from "mcp-embedded-ui";
+
+    const handler = createNodeHandler(myTools, myHandler, {
+      prefix: "/explorer",
+    });
+
+    http.createServer(handler).listen(8000);
+    // Visit http://localhost:8000/explorer/
+    ```
+
+## What is this?
+
 ## What is this?
 
 If you build an MCP server, your users interact with tools through JSON — no visual feedback, no schema browser, no quick way to test. **mcp-embedded-ui** solves this by defining a standard set of HTTP endpoints and a self-contained HTML page that any MCP server can serve, in any language.
@@ -21,117 +73,57 @@ If you build an MCP server, your users interact with tools through JSON — no v
 
 **One import. One mount. Full UI.**
 
-## What does the UI look like?
+## Key Features
 
 The embedded explorer page provides:
 
-- **Tool list** — browse all registered tools with descriptions and annotations
-- **Schema inspector** — expand any tool to view its full JSON Schema (`inputSchema`)
-- **Try-it console** — type JSON arguments, execute the tool, see results instantly
-- **cURL export** — copy a ready-made cURL command for any execution
-- **Auth support** — enter a Bearer token in the UI, sent with all requests
+- **Tool list** — browse all registered tools with descriptions and annotations.
+- **Schema inspector** — expand any tool to view its full JSON Schema (`inputSchema`).
+- **Try-it console** — type JSON arguments, execute the tool, see results instantly.
+- **cURL export** — copy a ready-made cURL command for any execution.
+- **Auth support** — enter a Bearer token in the UI, sent with all requests.
 
 No build step. No CDN. No external dependencies. The entire UI is a single HTML string embedded in your server binary/package.
 
-## This repo vs. language repos
+## Language Implementations
 
-| Repository | Package | Install |
-|------------|---------|---------|
-| **mcp-embedded-ui** (this repo) | — | Protocol spec, shared HTML template, feature specs — the "source of truth" |
-| [mcp-embedded-ui-python](https://github.com/aipartnerup/mcp-embedded-ui-python) | [PyPI](https://pypi.org/project/mcp-embedded-ui/) | `pip install mcp-embedded-ui` |
-| [mcp-embedded-ui-typescript](https://github.com/aipartnerup/mcp-embedded-ui-typescript) | [npm](https://www.npmjs.com/package/mcp-embedded-ui) | `npm install mcp-embedded-ui` |
+| Language | Repository | Package |
+|----------|------------|---------|
+| **Python** | [mcp-embedded-ui-python](https://github.com/aipartnerup/mcp-embedded-ui-python) | [PyPI](https://pypi.org/project/mcp-embedded-ui/) |
+| **TypeScript** | [mcp-embedded-ui-typescript](https://github.com/aipartnerup/mcp-embedded-ui-typescript) | [npm](https://www.npmjs.com/package/mcp-embedded-ui) |
+| **Go** | *Coming Soon* | — |
 
-This repo does **not** contain runnable code. It defines *what* to build. Language repos contain *how* to build it.
-
-## Quick start
-
-Pick your language and install:
-
-### Python
-
-```bash
-pip install mcp-embedded-ui
-```
-
-```python
-from fastapi import FastAPI
-from mcp_embedded_ui import create_mount
-
-app = FastAPI()
-app.routes.append(create_mount(tools=my_tools, handle_call=my_handler))
-# Visit http://localhost:8000/explorer/
-```
-
-### TypeScript
-
-```bash
-npm install mcp-embedded-ui
-```
-
-```typescript
-import http from "node:http";
-import { createNodeHandler } from "mcp-embedded-ui";
-
-const handler = createNodeHandler(myTools, myHandler, {
-  prefix: "/explorer",
-});
-http.createServer(handler).listen(8000);
-// Visit http://localhost:8000/explorer/
-```
-
-### Other languages
-
-Coming soon. See [How to Add a New Language](#how-to-add-a-new-language) to contribute.
-
-## Protocol overview
-
-The library exposes 4 HTTP endpoints under a configurable prefix (default `/explorer`):
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Self-contained HTML explorer page |
-| GET | `/tools` | Summary list of all tools |
-| GET | `/tools/{name}` | Full tool detail with `inputSchema` |
-| POST | `/tools/{name}/call` | Execute a tool, returns MCP `CallToolResult` |
-
-See [PROTOCOL.md](docs/PROTOCOL.md) for the full specification including request/response shapes, error codes, and security rules.
-
-## Documentation
+## Documentation for Developers
 
 | Document | Description |
 |----------|-------------|
-| [PROTOCOL.md](docs/PROTOCOL.md) | Endpoint spec, data shapes, cross-language abstraction mapping, security checklist |
-| [explorer.html](docs/explorer.html) | Self-contained HTML template — shared across all language implementations |
-| [features/MANIFEST.md](docs/features/MANIFEST.md) | Feature list with dependency graph and implementation order |
+| [Protocol Spec](docs/PROTOCOL.md) | Endpoint spec, data shapes, cross-language abstraction mapping. |
+| [Feature Manifest](docs/features/MANIFEST.md) | Implementation roadmap and dependency graph for new SDKs. |
+| [HTML Template](docs/explorer.html) | The shared "source of truth" HTML file used by all SDKs. |
 
-### Feature specs
+### Feature Deep Dives
 
-| ID | Feature | Description |
-|----|---------|-------------|
-| F1 | [HTML Frontend](docs/features/html-frontend.md) | Self-contained page with `{{TITLE}}` injection and XSS escaping |
-| F2 | [Tool Discovery API](docs/features/tool-discovery-api.md) | `GET /tools` and `GET /tools/{name}` endpoints |
-| F3 | [Tool Execution API](docs/features/tool-execution-api.md) | `POST /tools/{name}/call` with auth guard and error handling |
-| F4 | [Auth Hook](docs/features/auth-hook.md) | Pluggable auth via context manager / middleware pattern |
-| F5 | [Framework Integration](docs/features/framework-integration.md) | 3-tier API: routes → app → mount |
-| F6 | [Try-It Console](docs/features/try-it-console.md) | In-browser execution with result viewer and cURL export |
+- [F1: HTML Frontend](docs/features/html-frontend.md)
+- [F2: Tool Discovery API](docs/features/tool-discovery-api.md)
+- [F3: Tool Execution API](docs/features/tool-execution-api.md)
+- [F4: Auth Hook](docs/features/auth-hook.md)
+- [F5: Framework Integration](docs/features/framework-integration.md)
+- [F6: Try-It Console](docs/features/try-it-console.md)
 
-## How to add a new language
+## How to Add a New Language
 
-1. Read [PROTOCOL.md](docs/PROTOCOL.md) — the authoritative endpoint and data shape spec
-2. Read [features/MANIFEST.md](docs/features/MANIFEST.md) — implementation order and dependency graph
-3. Copy [explorer.html](docs/explorer.html) as your HTML template string (do not modify the HTML — it is shared)
-4. Implement features in order: **F1 → F2 → F3 → F4 → F6 → F5**
-5. Each feature spec includes a cross-language mapping table and test criteria
-6. Follow the [Security Checklist](docs/PROTOCOL.md#security-checklist) before release
-7. Add your repo to the [Language Implementations](#this-repo-vs-language-repos) table above
+1. Read the [Protocol Specification](docs/PROTOCOL.md) — the authoritative source for endpoints and data shapes.
+2. Follow the [Feature Manifest](docs/features/MANIFEST.md) implementation order: **F1 → F2 → F3 → F4 → F6 → F5**.
+3. Use the [explorer.html](docs/explorer.html) template (do not modify the HTML content).
+4. Ensure you follow the [Security Checklist](docs/PROTOCOL.md#security-checklist).
+5. Open a PR to add your implementation to this list!
 
-## Design principles
+## Design Principles
 
-- **Zero frontend build** — no npm, no webpack, no CDN. One HTML string.
-- **Framework-agnostic** — output is standard HTTP routes. Mount in any web framework.
-- **Cross-language consistency** — same endpoints, same response shapes, same HTML across all implementations.
-- **Secure by default** — XSS escaping, auth error sanitization, server-side execution guard.
-- **Minimal surface** — 4 endpoints, 3 abstractions (`ToolsProvider`, `ToolCallHandler`, `AuthHook`). Nothing more.
+- **Zero frontend build** — No npm/webpack/CDN. Just one HTML string.
+- **Framework-agnostic** — Standard HTTP routes that mount anywhere.
+- **Cross-language consistency** — Identical UX across Python, TS, Go, etc.
+- **Secure by default** — XSS protection and auth sanitization built-in.
 
 ## License
 

@@ -54,15 +54,20 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Protocol: PROTOCOL.md
-  - Features:
-      - Manifest: features/MANIFEST.md
-      - HTML Frontend: features/html-frontend.md
-      - Tool Discovery API: features/tool-discovery-api.md
-      - Tool Execution API: features/tool-execution-api.md
-      - Auth Hook: features/auth-hook.md
-      - Framework Integration: features/framework-integration.md
-      - Try-It Console: features/try-it-console.md
+  - Protocol Specification: PROTOCOL.md
+  - Implementation Guide:
+      - Overview: features/MANIFEST.md
+      - Core Features:
+          - "F1: HTML Frontend": features/html-frontend.md
+          - "F2: Tool Discovery API": features/tool-discovery-api.md
+          - "F3: Tool Execution API": features/tool-execution-api.md
+      - Advanced Features:
+          - "F4: Auth Hook": features/auth-hook.md
+          - "F5: Framework Integration": features/framework-integration.md
+          - "F6: Try-It Console": features/try-it-console.md
+  - Development:
+      - Roadmap: ROADMAP.md
+      - Explorer Template: explorer.html
 
 extra:
   social:

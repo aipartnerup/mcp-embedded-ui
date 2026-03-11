@@ -24,14 +24,6 @@ group headers showing the count of tools in each group.
 **Blocked on**: Confirming the naming convention (`/` vs `.` vs `_`) across
 real-world MCP servers before committing to a grouping strategy.
 
-## Dark Mode
-
-Add dark color scheme support for the explorer HTML page.
-
-**Plan**: Use `@media (prefers-color-scheme: dark)` for automatic detection,
-plus an optional `theme` parameter (`"auto"`, `"light"`, `"dark"`) in the
-render function for explicit control.
-
 ## Request History
 
 Save recent tool calls to `localStorage` and display them in the tool

@@ -3,8 +3,8 @@
 A cross-language specification and shared assets for embedding a browser-based tool explorer into any [MCP](https://modelcontextprotocol.io/) (Model Context Protocol) server.
 
 **Official SDKs:** 
-[**Python** (PyPI)](https://github.com/aipartnerup/mcp-embedded-ui-python) | 
-[**TypeScript** (npm)](https://github.com/aipartnerup/mcp-embedded-ui-typescript) |
+[**Python** (PyPI)](https://github.com/aiperceivable/mcp-embedded-ui-python) | 
+[**TypeScript** (npm)](https://github.com/aiperceivable/mcp-embedded-ui-typescript) |
 [**Go** (Coming Soon)]
 
 ---
@@ -12,7 +12,7 @@ A cross-language specification and shared assets for embedding a browser-based t
 ## Quick Start
 
 === "Python"
-    **SDK:** [aipartnerup/mcp-embedded-ui-python](https://github.com/aipartnerup/mcp-embedded-ui-python)
+    **SDK:** [aiperceivable/mcp-embedded-ui-python](https://github.com/aiperceivable/mcp-embedded-ui-python)
 
     ```bash
     pip install mcp-embedded-ui
@@ -35,7 +35,7 @@ A cross-language specification and shared assets for embedding a browser-based t
     ```
 
 === "TypeScript"
-    **SDK:** [aipartnerup/mcp-embedded-ui-typescript](https://github.com/aipartnerup/mcp-embedded-ui-typescript)
+    **SDK:** [aiperceivable/mcp-embedded-ui-typescript](https://github.com/aiperceivable/mcp-embedded-ui-typescript)
 
     ```bash
     npm install mcp-embedded-ui

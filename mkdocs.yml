@@ -1,8 +1,8 @@
 site_name: mcp-embedded-ui
 site_description: Cross-language specification for embedding a browser-based tool explorer into any MCP server.
-site_url: https://aipartnerup.github.io/mcp-embedded-ui/
-repo_url: https://github.com/aipartnerup/mcp-embedded-ui
-repo_name: aipartnerup/mcp-embedded-ui
+site_url: https://aiperceivable.github.io/mcp-embedded-ui/
+repo_url: https://github.com/aiperceivable/mcp-embedded-ui
+repo_name: aiperceivable/mcp-embedded-ui
 
 docs_dir: docs
 
@@ -72,4 +72,4 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/aipartnerup/mcp-embedded-ui
+      link: https://github.com/aiperceivable/mcp-embedded-ui

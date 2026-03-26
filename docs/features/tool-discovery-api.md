@@ -128,7 +128,7 @@ implement it in their callable.
 | Python     | `list \| Callable \| AsyncCallable`                        |
 | TypeScript | `Tool[] \| (() => Tool[]) \| (() => Promise<Tool[]>)`      |
 | Go         | `[]Tool` or `ToolProvider interface { Tools() []Tool }`     |
-| Rust       | `Vec<Tool>` or `impl Fn() -> Vec<Tool>`                    |
+| Rust       | `Vec<Arc<dyn Tool>>` or `impl ToolsProvider` trait         |
 
 ## Tool Object Protocol
 

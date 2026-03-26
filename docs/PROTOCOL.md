@@ -126,7 +126,7 @@ Provides the list of tools. Can be static or dynamic.
 | Python | `list[Tool] \| Callable[[], list] \| Callable[[], Awaitable[list]]` |
 | TypeScript | `Tool[] \| (() => Tool[]) \| (() => Promise<Tool[]>)` |
 | Go | `[]Tool` or `ToolProvider interface { Tools() []Tool }` |
-| Rust | `Vec<Tool>` or `impl Fn() -> Vec<Tool>` |
+| Rust | `Vec<Arc<dyn Tool>>` or `impl ToolsProvider` trait |
 
 ### ToolCallHandler
 
@@ -145,7 +145,7 @@ etc.) without breaking existing 2-parameter handlers.
 | Python | `async def handler(name, args) -> tuple[list, bool, str \| None]` | `async def handler(name, args, request) -> tuple[list, bool, str \| None]` |
 | TypeScript | `(name: string, args: Record) => Promise<[Content[], boolean, string?]>` | `(name: string, args: Record, req: Request) => Promise<[Content[], boolean, string?]>` |
 | Go | `HandleCall(name string, args map[string]any) ([]Content, bool, string, error)` | `HandleCall(ctx context.Context, name string, args map[string]any) ([]Content, bool, string, error)` ¹ |
-| Rust | `async fn handle_call(name: &str, args: Value) -> Result<CallResult>` | `async fn handle_call(name: &str, args: Value, req: &Request) -> Result<CallResult>` |
+| Rust | `Fn(String, Value) -> Future<Result<(Vec<Content>, bool, Option<String>)>>` | `Fn(String, Value, Request) -> Future<Result<(Vec<Content>, bool, Option<String>)>>` |
 
 ¹ Go uses `context.Context` idiomatically; retrieve the request via `RequestFromContext(ctx)`.
 
@@ -170,7 +170,7 @@ reject with 401.
 | Python | Context manager (`with auth_hook(request): ...`) |
 | TypeScript | Middleware (`(req, next) => { validate(req); return next(); }`) |
 | Go | `http.Handler` middleware wrapper |
-| Rust | Tower middleware / extractor |
+| Rust | Async function (`async fn(parts: Parts) -> Result<(), AuthError>`) |
 
 **Security rule**: Auth rejection must return `{"error": "Unauthorized"}`
 without leaking internal exception details.

@@ -116,7 +116,7 @@ that any state-changing operation requires valid credentials.
 | Python | `@contextmanager` / `@asynccontextmanager` returning CM | `with auth_hook(request): ...` |
 | TypeScript | Middleware function | `(req, next) => { validate(req); return next() }` |
 | Go | `http.Handler` middleware wrapper | `func AuthMiddleware(next http.Handler) http.Handler` |
-| Rust | Tower middleware / Axum extractor | `async fn auth(req: Request) -> Result<(), StatusCode>` |
+| Rust | Async function (`async fn(parts: Parts) -> Result<(), AuthError>`) | `AuthHook(Some(Arc::new(\|parts\| { ... })))` |
 
 ## Examples
 

@@ -45,5 +45,6 @@ F6 (Try-It Console) ──→ F3 (Tool Execution API)
 
 | Language | Repository | Status |
 |----------|-----------|--------|
-| Python | [mcp-embedded-ui-python](../../../mcp-embedded-ui-python) | Reference implementation |
-| TypeScript | [mcp-embedded-ui-typescript](../../../mcp-embedded-ui-typescript) | v0.2.0 |
+| Python | [mcp-embedded-ui-python](https://github.com/aiperceivable/mcp-embedded-ui-python) | Reference implementation |
+| TypeScript | [mcp-embedded-ui-typescript](https://github.com/aiperceivable/mcp-embedded-ui-typescript) | v0.2.0 |
+| Rust | [mcp-embedded-ui-rust](https://github.com/aiperceivable/mcp-embedded-ui-rust) | v0.3.0 |

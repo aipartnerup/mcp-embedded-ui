@@ -117,6 +117,8 @@ All three factory functions accept the same configuration parameters:
 | `allow_execute` | `bool`                | `false`               | Enable/disable execution endpoint  |
 | `auth_hook`     | `AuthHook \| null`    | `null`                | Auth guard (see F4)                |
 | `title`         | `string`              | `"MCP Tool Explorer"` | Page title (substituted into HTML) |
+| `project_name`  | `string \| null`      | `null`                | Project name shown in footer       |
+| `project_url`   | `string \| null`      | `null`                | Project URL linked in footer (requires `project_name`) |
 
 ## Public Type Exports
 

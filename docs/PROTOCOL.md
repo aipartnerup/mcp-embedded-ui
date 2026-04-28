@@ -8,6 +8,7 @@ Cross-language implementation reference for the MCP Embedded UI.
 ┌─────────────────────────────────────────────┐
 │  Browser (HTML/JS — self-contained)         │
 │  Fetches: /tools, /tools/{name},             │
+│           /tools/{name}/validate,           │
 │           /tools/{name}/call                │
 └──────────────┬──────────────────────────────┘
                │ HTTP (JSON)
@@ -78,6 +79,51 @@ Returns full detail for a single tool, including `inputSchema`.
 { "error": "Tool not found: unknown_tool" }
 ```
 
+### `POST /tools/{name}/validate`
+
+Validate request arguments against the tool's `inputSchema` **without
+executing the tool**. The endpoint is read-only and is **not** gated by
+`allow_execute` or by `auth_hook`; it simply restates the schema check
+that the host would otherwise perform inside the handler.
+
+**Request** (`application/json`): the same shape as `/call` — the tool's
+input arguments as a JSON object.
+
+```json
+{ "city": "Paris" }
+```
+
+**Preconditions** (evaluated in order):
+1. If tool not found → `404 {"error": "Tool not found: {name}"}`
+2. If request body is not valid JSON → `400 {"valid": false, "errors": [{"path": "", "message": "Invalid JSON: {detail}", "keyword": "format"}]}`
+3. Otherwise → run JSON Schema validation against `inputSchema`
+
+**Success Response** (`200`, valid input):
+```json
+{ "valid": true }
+```
+
+**Failure Response** (`200`, invalid input):
+```json
+{
+  "valid": false,
+  "errors": [
+    { "path": "/city", "message": "is required", "keyword": "required" },
+    { "path": "/count", "message": "must be integer", "keyword": "type" }
+  ]
+}
+```
+
+- `path` uses JSON Pointer (RFC 6901). The root is the empty string `""`.
+- `keyword` is the JSON Schema keyword that failed (`required`, `type`,
+  `minimum`, `pattern`, …). Optional but recommended.
+- HTTP status is **always `200`** when validation runs (regardless of
+  whether the input is valid). Non-200 statuses are reserved for the
+  preconditions above and for transport errors.
+- Validation is purely structural — based on `inputSchema`. Semantic
+  validation (e.g. "city must exist in our database") belongs in the
+  tool handler, not here.
+
 ### `POST /tools/{name}/call`
 
 Execute a tool. Request body is the tool's input arguments.
@@ -114,6 +160,30 @@ Execute a tool. Request body is the tool's input arguments.
 - `content` items follow MCP content types: `TextContent` (`type: "text"`),
   `ImageContent` (`type: "image"`, with `mimeType` and base64 `data`), or
   other types. The frontend renders each type appropriately.
+
+## JSON Schema validation (for `/validate`)
+
+The library performs structural validation by feeding the request body
+and the tool's `inputSchema` into the language-idiomatic JSON Schema
+validator. SDKs are expected to depend on a community-standard library
+rather than rolling their own validator.
+
+| Language   | Validator |
+|------------|-----------|
+| Python     | [`jsonschema`](https://pypi.org/project/jsonschema/) (Draft 2020-12 by default; falls back to the `$schema`-declared dialect) |
+| TypeScript | [`ajv`](https://www.npmjs.com/package/ajv) (with `ajv-formats`) |
+| Go         | [`santhosh-tekuri/jsonschema`](https://pkg.go.dev/github.com/santhosh-tekuri/jsonschema/v5) |
+| Rust       | [`jsonschema`](https://crates.io/crates/jsonschema) |
+
+**Error normalization** — each validator emits errors in its own shape;
+the library normalizes them to `{path, message, keyword}` before
+returning. `path` MUST be a JSON Pointer. `message` SHOULD be the
+validator's human-readable string verbatim (no translation, no
+reformatting). `keyword` SHOULD be the failing JSON Schema keyword when
+the underlying validator exposes it; omit otherwise.
+
+**Tools without an `inputSchema`** — treat as the always-true schema
+(`{}`); validation always passes.
 
 ## Abstractions (language-specific mapping)
 
@@ -209,4 +279,5 @@ JavaScript. No external dependencies, no build step.
 - [ ] Do not leak auth error details in 401 responses
 - [ ] `allow_execute` must block at the handler level, not just the UI; consider setting to `false` in production if execution is not needed
 - [ ] Tool `name` from URL path params must be validated against known tools
+- [ ] `/tools/{name}/validate` must not invoke the tool handler under any code path
 - [ ] `esc()` in frontend must escape all user content before `innerHTML`

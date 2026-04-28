@@ -1,6 +1,6 @@
 # F6: Try-It Console
 
-**Status:** P1 | **Complexity:** M | **Dependencies:** F1, F3
+**Status:** P1 | **Complexity:** M | **Dependencies:** F1, F3, F7
 
 ## Overview
 
@@ -126,6 +126,34 @@ result area:
 - On successful copy, the button text changes to "Copied!" and reverts
   after **1.5 seconds**.
 
+### FR-8: Schema Validation
+
+A "Validate" button sits next to "Execute" in the console. It calls
+`POST /tools/{name}/validate` (F7) with the current editor body and
+renders the result inline:
+
+- **Valid** -- a single green line ("Input is valid.") replaces any
+  prior validation output. The result area is otherwise untouched.
+- **Invalid** -- a red panel lists each error as
+  `<path>: <message>` (path empty for root errors). The panel also
+  includes the raw JSON error body in a `<details>` block for the
+  curious.
+- **Network / 4xx errors** -- surfaced as a generic red message
+  identical in styling to the F3 error path. A 404 means the tool
+  vanished between page load and click; a 400 means the editor body
+  is not even valid JSON, and the local `JSON.parse()` error message
+  takes precedence over the server reply.
+
+The Validate button is **always visible**, even when
+`{{ALLOW_EXECUTE}}` is `false`. This is intentional: validation has
+no execution side-effects and is the most useful UI affordance left
+when execution is disabled.
+
+A 401 response is **not expected** from `/validate` (the endpoint is
+not auth-gated by spec). If one is observed -- e.g. because the host
+applied framework-level middleware -- it is rendered identically to
+the FR-5 "Unauthorized" message.
+
 ### FR-7: Auth Integration
 
 - All `fetch()` requests from the Try-It console include authorization
@@ -160,6 +188,7 @@ refreshing the page clears the token.
   following endpoints:
   - `GET /tools` -- tool list.
   - `GET /tools/{name}` -- tool detail with `inputSchema`.
+  - `POST /tools/{name}/validate` -- schema validation (F7).
   - `POST /tools/{name}/call` -- tool execution.
 - The `{{ALLOW_EXECUTE}}` template variable is injected server-side
   (same mechanism as `{{TITLE}}`), eliminating the need for a `/meta`
@@ -183,3 +212,6 @@ refreshing the page clears the token.
 | TC-11 | Copy button shows "Copied!" feedback for 1.5 seconds. | UI test: click copy, assert button text change and revert timing. |
 | TC-12 | `{{ALLOW_EXECUTE}}` set to `false` replaces Try-It section with disabled message on page load. | UI test: render HTML with `{{ALLOW_EXECUTE}}` = `false`, assert console is not rendered. |
 | TC-13 | Invalid JSON in textarea shows inline error and does not send request. | UI test: enter malformed JSON, click Execute, assert error message and no network request. |
+| TC-14 | Validate button is visible even when `{{ALLOW_EXECUTE}}` is `false`. | UI test: render with execute disabled, assert Validate button is present and Execute is hidden. |
+| TC-15 | Valid input shows the green "Input is valid." line. | UI test: provide schema-conforming JSON, click Validate, assert green confirmation. |
+| TC-16 | Invalid input lists `<path>: <message>` per error. | UI test: omit a required field, click Validate, assert red panel lists `/<field>: is required`. |

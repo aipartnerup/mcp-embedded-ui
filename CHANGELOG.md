@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-04-28
+
+### Added
+
+- **`POST /tools/{name}/validate` endpoint (F7)** — read-only schema validation, no execution. Specified in `PROTOCOL.md` and the new `docs/features/tool-validation-api.md` so all SDKs implement it identically (path, request shape, error normalization, gating rules). Resolves EUI-1 — the SDKs cannot register this route on their own; the protocol must define it first.
+- **Validate button in `explorer.html`** — sits next to Execute, calls `/validate`, surfaces `path: message` errors inline. Stays visible even when `allow_execute` is `false`, since validation has no side effects.
+
+### Changed
+
+- F5 (Framework Integration) and F6 (Try-It Console) dependencies updated to include F7. Try-It Console gains FR-8 (schema validation) plus three new test criteria (TC-14–TC-16).
+- The `/call` 403 handler in `explorer.html` now removes only the Execute button and inserts a disabled-message paragraph, preserving the Validate button and the input editor.
+
 ## [0.3.1] - 2026-03-22
 
 ### Changed

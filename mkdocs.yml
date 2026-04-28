@@ -61,6 +61,7 @@ nav:
           - "F1: HTML Frontend": features/html-frontend.md
           - "F2: Tool Discovery API": features/tool-discovery-api.md
           - "F3: Tool Execution API": features/tool-execution-api.md
+          - "F7: Tool Validation API": features/tool-validation-api.md
       - Advanced Features:
           - "F4: Auth Hook": features/auth-hook.md
           - "F5: Framework Integration": features/framework-integration.md

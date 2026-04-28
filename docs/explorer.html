@@ -84,6 +84,22 @@ document.documentElement.setAttribute('data-theme',t);})();
                  font-weight: 600; }
   .execute-btn:hover { background: var(--btn-hover); }
   .execute-btn:disabled { background: #ccc; cursor: not-allowed; }
+  .try-it-actions { display: flex; gap: 0; align-items: center; flex-wrap: wrap; }
+  .validate-btn { margin-top: 8px; margin-left: 8px; padding: 8px 16px; background: transparent;
+                  color: var(--fg); border: 1px solid var(--border-strong); border-radius: 4px;
+                  cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+  .validate-btn:hover { background: var(--surface-hover); }
+  .validate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .validate-area { margin-top: 10px; font-size: 0.85rem; }
+  .validate-ok { color: #49cc90; }
+  .validate-err { background: var(--hint-dest-bg); color: var(--hint-dest-fg);
+                  padding: 8px 12px; border-radius: 4px; }
+  .validate-err ul { margin: 4px 0 0 20px; padding: 0; }
+  .validate-err li { margin: 2px 0; font-family: monospace; font-size: 0.82rem; }
+  .validate-err details { margin-top: 6px; }
+  .validate-err details pre { background: var(--code-bg); color: var(--code-fg);
+                              padding: 8px; border-radius: 3px; font-size: 0.78rem;
+                              margin-top: 4px; }
   .result-area { margin-top: 12px; }
   .result-area pre { background: var(--result-bg); }
   .result-error { color: #f93e3e; }
@@ -306,29 +322,98 @@ document.documentElement.setAttribute('data-theme',t);})();
           '<textarea class="input-editor">' +
           esc(JSON.stringify(defaultFromSchema(d.inputSchema), null, 2)) +
           '</textarea>' +
-          '<button class="execute-btn">Execute</button>' +
+          '<div class="try-it-actions">' +
+            (executeEnabled !== false ? '<button class="execute-btn">Execute</button>' : '') +
+            '<button class="validate-btn">Validate</button>' +
+          '</div>' +
+          '<div class="validate-area"></div>' +
+          (executeEnabled === false
+            ? '<p class="exec-disabled">Tool execution is disabled. ' +
+              'Launch with --allow-execute to enable.</p>'
+            : '') +
           '<div class="result-area"></div>' +
           '</div>';
 
         detailEl.innerHTML = html;
 
-        detailEl.querySelector('.execute-btn').onclick = function() {
-          execTool(li, d.name);
+        var execBtn = detailEl.querySelector('.execute-btn');
+        if (execBtn) execBtn.onclick = function() { execTool(li, d.name); };
+        detailEl.querySelector('.validate-btn').onclick = function() {
+          validateTool(li, d.name);
         };
-
-        if (executeEnabled === false) {
-          var tryIt = detailEl.querySelector('.try-it');
-          if (tryIt) tryIt.innerHTML =
-            '<p class="exec-disabled">' +
-            'Tool execution is disabled. ' +
-            'Launch with --allow-execute to enable.</p>';
-        }
       })
       .catch(function(e) {
         detailEl.setAttribute('data-loaded', '1');
         detailEl.innerHTML = '<p class="result-error" style="padding-top:12px">' +
           'Failed to load tool details: ' + esc(e.message) + '</p>';
       });
+  }
+
+  function validateTool(li, name) {
+    var detailEl = li.querySelector('.tool-detail');
+    var btn = detailEl.querySelector('.validate-btn');
+    var editor = detailEl.querySelector('.input-editor');
+    var area = detailEl.querySelector('.validate-area');
+
+    var inputText = editor.value.trim();
+    var inputs;
+    try {
+      inputs = inputText ? JSON.parse(inputText) : {};
+    } catch (e) {
+      area.innerHTML = '<div class="validate-err">Invalid JSON: ' + esc(e.message) + '</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    var origText = btn.textContent;
+    btn.textContent = 'Validating...';
+    area.innerHTML = '';
+
+    var fetchHeaders = Object.assign({'Content-Type': 'application/json'}, getAuthHeaders());
+    fetch(base + '/tools/' + encodeURIComponent(name) + '/validate', {
+      method: 'POST',
+      headers: fetchHeaders,
+      body: JSON.stringify(inputs)
+    })
+    .then(function(r) {
+      return r.json().then(function(data) { return {status: r.status, data: data}; });
+    })
+    .then(function(result) {
+      btn.disabled = false;
+      btn.textContent = origText;
+      var data = result.data || {};
+      if (result.status === 401) {
+        area.innerHTML = '<div class="validate-err">401 Unauthorized — ' +
+          'enter a valid Bearer token in the Authorization field above.</div>';
+        return;
+      }
+      if (result.status === 404) {
+        area.innerHTML = '<div class="validate-err">' + esc(data.error || 'Tool not found') + '</div>';
+        return;
+      }
+      if (data.valid) {
+        area.innerHTML = '<div class="validate-ok">✓ Input is valid.</div>';
+        return;
+      }
+      var errors = data.errors || [];
+      var items = errors.map(function(e) {
+        var p = e.path === '' ? '(root)' : e.path;
+        return '<li>' + esc(p) + ': ' + esc(e.message || 'invalid') + '</li>';
+      }).join('');
+      area.innerHTML =
+        '<div class="validate-err">' +
+          '<strong>' + errors.length + ' validation error' +
+            (errors.length === 1 ? '' : 's') + ':</strong>' +
+          '<ul>' + items + '</ul>' +
+          '<details><summary style="cursor:pointer;font-size:0.78rem;margin-top:6px">Raw response</summary>' +
+          '<pre>' + esc(JSON.stringify(data, null, 2)) + '</pre></details>' +
+        '</div>';
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      btn.textContent = origText;
+      area.innerHTML = '<div class="validate-err">Request failed: ' + esc(e.message) + '</div>';
+    });
   }
 
   function execTool(li, name) {
@@ -373,11 +458,15 @@ document.documentElement.setAttribute('data-theme',t);})();
     .then(function(r) {
       if (r.status === 403) {
         executeEnabled = false;
-        var tryIt = detailEl.querySelector('.try-it');
-        if (tryIt) tryIt.innerHTML =
-          '<p class="exec-disabled">' +
-          'Tool execution is disabled. ' +
-          'Launch with --allow-execute to enable.</p>';
+        var execBtnEl = detailEl.querySelector('.execute-btn');
+        if (execBtnEl) execBtnEl.parentNode.removeChild(execBtnEl);
+        var actions = detailEl.querySelector('.try-it-actions');
+        if (actions && !detailEl.querySelector('.exec-disabled')) {
+          var msg = document.createElement('p');
+          msg.className = 'exec-disabled';
+          msg.textContent = 'Tool execution is disabled. Launch with --allow-execute to enable.';
+          actions.parentNode.insertBefore(msg, actions.nextSibling);
+        }
         return null;
       }
       if (r.status === 401) {

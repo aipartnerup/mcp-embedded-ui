@@ -5,6 +5,7 @@ A cross-language specification and shared assets for embedding a browser-based t
 **Official SDKs:** 
 [**Python** (PyPI)](https://github.com/aiperceivable/mcp-embedded-ui-python) | 
 [**TypeScript** (npm)](https://github.com/aiperceivable/mcp-embedded-ui-typescript) |
+[**Rust** (crates.io)](https://github.com/aiperceivable/mcp-embedded-ui-rust) |
 [**Go** (Coming Soon)]
 
 ---
@@ -51,6 +52,22 @@ A cross-language specification and shared assets for embedding a browser-based t
 
     http.createServer(handler).listen(8000);
     // Visit http://localhost:8000/explorer/
+    ```
+
+=== "Rust"
+    **SDK:** [aiperceivable/mcp-embedded-ui-rust](https://github.com/aiperceivable/mcp-embedded-ui-rust)
+
+    ```toml
+    # cargo.toml
+    [dependencies]
+    mcp-embedded-ui = "0.4.0"
+    ```
+
+    ```rust
+    use mcp_embedded_ui::{ExplorerOptions, axum_handler};
+
+    let options = ExplorerOptions::default();
+    let app = Router::new().route("/explorer/*path", get(axum_handler));
     ```
 
 ## What is this?

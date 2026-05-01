@@ -8,11 +8,17 @@ All notable changes to this project will be documented in this file.
 
 - **`POST /tools/{name}/validate` endpoint (F7)** — read-only schema validation, no execution. Specified in `PROTOCOL.md` and the new `docs/features/tool-validation-api.md` so all SDKs implement it identically (path, request shape, error normalization, gating rules). Resolves EUI-1 — the SDKs cannot register this route on their own; the protocol must define it first.
 - **Validate button in `explorer.html`** — sits next to Execute, calls `/validate`, surfaces `path: message` errors inline. Stays visible even when `allow_execute` is `false`, since validation has no side effects.
+- **`project_name` and `project_url` configuration** — allows downstream users to display their project identity in the UI footer.
+- **Rust SDK support** — added Rust type definitions to the protocol and officially added `mcp-embedded-ui-rust` to the manifest.
+- **Go SDK support** — added Go SDK to the official implementation list.
+- **Quick start guides** — introduced language-specific quick start guides in the documentation.
 
 ### Changed
 
 - F5 (Framework Integration) and F6 (Try-It Console) dependencies updated to include F7. Try-It Console gains FR-8 (schema validation) plus three new test criteria (TC-14–TC-16).
 - The `/call` 403 handler in `explorer.html` now removes only the Execute button and inserts a disabled-message paragraph, preserving the Validate button and the input editor.
+- Refined Rust and Go implementation details in `PROTOCOL.md` (e.g., `Arc<dyn Tool>` for Rust, `context.Context` for Go).
+- Restructured project documentation for better clarity and discoverability.
 
 ## [0.3.1] - 2026-03-22
 

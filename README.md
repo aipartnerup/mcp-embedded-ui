@@ -130,6 +130,32 @@ No build step. No CDN. No external dependencies. The entire UI is a single HTML 
 4. Ensure you follow the [Security Checklist](docs/PROTOCOL.md#security-checklist).
 5. Open a PR to add your implementation to this list!
 
+## Working on the Shared Template
+
+`docs/explorer.html` is the source of truth. Each SDK ships a byte-identical
+copy and asserts it in its own suite (the "drift check"), so a change here is
+not finished until the copies follow.
+
+```bash
+make sync-html      # copy into every checked-out SDK repo, then commit there
+make install-hooks  # one-time per clone: sync automatically after each commit
+```
+
+`make install-hooks` sets `core.hooksPath` to `.githooks`, whose `post-commit`
+runs the same script — but only for commits that actually touch
+`docs/explorer.html`. Both entry points call `scripts/sync-explorer.sh`; there
+is no second implementation to drift.
+
+The script is deliberately conservative:
+
+- An SDK repo that is not checked out beside this one is skipped, not an error.
+- A copy already matching the template is left untouched.
+- A copy matching **neither** this working tree **nor** the last commit here is
+  refused, not overwritten — that means someone edited the SDK's copy directly,
+  which is exactly what the drift check exists to surface.
+- Copies are written but never committed; the script prints the `git -C ...`
+  command for each repo that changed.
+
 ## Design Principles
 
 - **Zero frontend build** — No npm/webpack/CDN. Just one HTML string.

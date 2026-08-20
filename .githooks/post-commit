@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# Keep the SDK copies of explorer.html in step with the spec repo.
+#
+# Runs only when the commit just created actually touched the template, so
+# ordinary commits pay nothing. The copy itself lives in scripts/, not here —
+# a hook that reimplements the logic is a hook that drifts from it.
+#
+# Install once per clone:  git config core.hooksPath .githooks
+#
+# post-commit cannot fail a commit that already happened; a non-zero exit here
+# is only a signal to the operator, which is why the sync script's refusal to
+# clobber local edits surfaces as visible output rather than a silent skip.
+
+set -uo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+if git diff-tree --no-commit-id --name-only -r HEAD | grep -qx "docs/explorer.html"; then
+  echo
+  "$repo_root/scripts/sync-explorer.sh" || true
+fi

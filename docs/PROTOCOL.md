@@ -120,6 +120,10 @@ input arguments as a JSON object.
 - HTTP status is **always `200`** when validation runs (regardless of
   whether the input is valid). Non-200 statuses are reserved for the
   preconditions above and for transport errors.
+- If the tool's `inputSchema` is not itself a valid JSON Schema, the response
+  is `200 {"valid": false, "errors": [{"path": "", "message": "Invalid schema:
+  …", "keyword": "schema"}]}`. It must never be a 5xx and must never report
+  `valid: true`. See F7 → "Schemas That Cannot Be Compiled".
 - Validation is purely structural — based on `inputSchema`. Semantic
   validation (e.g. "city must exist in our database") belongs in the
   tool handler, not here.
@@ -187,6 +191,11 @@ the underlying validator exposes it; omit otherwise.
 
 ## Abstractions (language-specific mapping)
 
+> **Go rows are forward-looking.** No Go SDK is published yet (see
+> `docs/features/MANIFEST.md`). The Go mappings below exist so that an
+> implementation has a spec to follow — they describe intent, not shipped code.
+> Do not read them as evidence that a Go SDK exists.
+
 ### ToolsProvider
 
 Provides the list of tools. Can be static or dynamic.
@@ -209,6 +218,15 @@ object. Implementations should auto-detect whether the handler accepts 2 or
 3 parameters (e.g. via `inspect.signature` in Python, `Function.length` in
 JS). This allows integrations to access request context (headers, identity,
 etc.) without breaking existing 2-parameter handlers.
+
+**The request body is NOT guaranteed to be readable from this parameter.**
+It has already been consumed and parsed — its contents reach the handler as
+`args`. Some runtimes happen to leave it re-readable (Starlette caches the
+body on the request object), others cannot (Rust's axum body is a consumed
+stream, and `mcp-embedded-ui-rust` passes an empty body). Handlers that read
+the body from this parameter are relying on a runtime accident and will not
+port across languages. Use it for headers, identity, and connection context
+only.
 
 | Language | 2-param (basic) | 3-param (with request) |
 |----------|----------------|----------------------|
@@ -273,9 +291,25 @@ JavaScript. No external dependencies, no build step.
 - `{{ALLOW_EXECUTE}}` — replaced with `true` or `false` (JS literal, no quotes). **Defaults to `false`**. Set to `true` to enable tool execution — must be enforced at the handler level, not just the UI.
 - `{{PROJECT_LINK}}` — replaced with a footer link fragment. Empty string if `project_name` is not configured. If `project_name` is set without `project_url`, renders as plain text. If both are set, renders as a clickable link. Both values must be HTML-escaped before injection.
 
+  **`project_url` must additionally be scheme-checked**, because HTML escaping
+  alone does not neutralise `javascript:` — that string contains no character
+  an escaper would touch. Before building the anchor:
+
+  1. Remove every TAB (U+0009), LF (U+000A) and CR (U+000D) from the value,
+     then trim leading and trailing whitespace. Browsers ignore these while
+     resolving a scheme, so `java&#9;script:alert(1)` resolves to
+     `javascript:alert(1)` and would otherwise slip past a naive prefix check.
+  2. Accept the value only if it then begins with `http://`, `https://` or
+     `mailto:` (ASCII case-insensitive), or with `/` (site-relative).
+  3. Otherwise render `project_name` as plain text with no anchor. Do not
+     silently drop the footer, and do not emit a partial anchor.
+
 ## Security Checklist
 
 - [ ] HTML-escape `title` before template injection (prevent XSS)
+- [ ] Scheme-check `project_url` before placing it in `href` — HTML escaping
+      alone does not stop `javascript:`. Strip TAB/LF/CR and trim first, then
+      allow only `http://`, `https://`, `mailto:` or a leading `/`
 - [ ] Do not leak auth error details in 401 responses
 - [ ] `allow_execute` must block at the handler level, not just the UI; consider setting to `false` in production if execution is not needed
 - [ ] Tool `name` from URL path params must be validated against known tools

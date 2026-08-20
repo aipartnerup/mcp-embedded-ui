@@ -63,6 +63,15 @@ The optional `request` parameter allows handlers to access HTTP context
 Implementations should auto-detect whether the handler accepts 2 or 3
 parameters (e.g. via `inspect.signature` in Python, `Function.length` in JS).
 
+**The request body is NOT guaranteed to be readable from this parameter.**
+It has already been consumed and parsed — its contents reach the handler as
+`args`. Some runtimes happen to leave it re-readable (Starlette caches the
+body on the request object), others cannot (Rust's axum body is a consumed
+stream, and `mcp-embedded-ui-rust` passes an empty body). Handlers that read
+the body from this parameter are relying on a runtime accident and will not
+port across languages. Use it for headers, identity, and connection context
+only.
+
 | Return Element | Type | Description |
 |----------------|------|-------------|
 | `content` | `list[Content]` | List of MCP content objects (`TextContent`, `ImageContent`, etc.) |

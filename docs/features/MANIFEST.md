@@ -47,8 +47,12 @@ F6 (Try-It Console) ──→ F3 (Tool Execution API)  F7 (Tool Validation API)
 
 ## Cross-Language Implementations
 
+"Pending release" means the version is committed in the SDK repo but not yet
+published to its package registry. Drop the marker as part of publishing.
+
 | Language | Repository | Status |
 |----------|-----------|--------|
-| Python | [mcp-embedded-ui-python](https://github.com/aiperceivable/mcp-embedded-ui-python) | v0.4.0 |
-| TypeScript | [mcp-embedded-ui-typescript](https://github.com/aiperceivable/mcp-embedded-ui-typescript) | v0.4.0 |
-| Rust | [mcp-embedded-ui-rust](https://github.com/aiperceivable/mcp-embedded-ui-rust) | v0.4.0 |
+| Python | [mcp-embedded-ui-python](https://github.com/aiperceivable/mcp-embedded-ui-python) | v0.5.0 (pending release) |
+| TypeScript | [mcp-embedded-ui-typescript](https://github.com/aiperceivable/mcp-embedded-ui-typescript) | v0.5.0 (pending release) |
+| Rust | [mcp-embedded-ui-rust](https://github.com/aiperceivable/mcp-embedded-ui-rust) | v0.5.0 (pending release) |
+| Go | — | Planned. `PROTOCOL.md` already carries the Go type and validator mapping so an implementation has a spec to follow; no SDK is published yet. |

@@ -78,6 +78,41 @@ A tool exposing no `inputSchema` (or one set to `null` / missing) is
 treated as having the always-true schema `{}`. Validation always
 returns `{"valid": true}` for such tools.
 
+### Schemas That Cannot Be Compiled
+
+A tool may expose an `inputSchema` that is not itself a valid JSON
+Schema -- `{"type": "no-such-type"}`, a `$ref` that does not resolve,
+and so on. No validator can be built from it, so no meaningful
+validation is possible.
+
+Such a schema MUST be reported as a **single validation failure**:
+
+```json
+{
+  "valid": false,
+  "errors": [
+    { "path": "", "message": "Invalid schema: {detail}", "keyword": "schema" }
+  ]
+}
+```
+
+- HTTP status stays **200**. The endpoint ran; it simply could not
+  validate against the declared schema.
+- It MUST NOT surface as a 5xx. A broken schema is a property of the
+  registered tool, not a server fault, and a crash hides which tool is
+  at fault behind a generic error.
+- It MUST NOT be reported as `valid`. Answering `{"valid": true}` here
+  means the console says "Input is valid." with nothing having been
+  checked -- the same failure mode F6/FR-1 was rewritten to eliminate.
+- `{detail}` is the underlying validator's own message. Implementations
+  are **not** required to normalize its wording across languages.
+
+Implementations legitimately disagree on *which* schemas are
+compilable: `{"required": "url"}` is rejected by Ajv and by the Rust
+`jsonschema` crate, but accepted by Python's `jsonschema`. That is
+acceptable -- this contract fixes the **response shape when compilation
+fails**, not a shared definition of "malformed".
+
 ## Response Format
 
 `Content-Type: application/json` for all responses.
@@ -124,6 +159,27 @@ This separates **transport health** (4xx/5xx) from **validation
 result** (`valid: true|false` in a 200 body), letting frontends
 distinguish "the request reached us and the answer is no" from "the
 request never reached the validator".
+
+## Public Type Exports
+
+The response shapes are part of the protocol, not an implementation detail —
+a caller in a typed language should be able to name what this endpoint
+returns. Each SDK **SHOULD** export both from the package root:
+
+| Spec name | Shape |
+|-------------------|-------------------------------------------------|
+| `ValidateResult` | `{ valid: bool, errors?: ValidationFailure[] }` — `errors` omitted when valid |
+| `ValidationFailure` | `{ path: string, message: string, keyword?: string }` |
+
+Use these names, adjusted only for the language's casing convention. Prefer
+`ValidationFailure` over `ValidationError`: these are plain data records, and
+in most languages `Error` names an exception type, which this is not.
+
+This is a SHOULD rather than a MUST because a language without a meaningful
+type surface (or one whose JSON handling is untyped) gains nothing from it.
+Where types exist, exporting them is expected: defining the type internally
+and withholding it from the package root is the one outcome to avoid — the
+API returns a shape its own users cannot name.
 
 ## Cross-Language Mapping
 
@@ -196,6 +252,8 @@ if (!validate(data)) {
 | 9 | `auth_hook` configured to reject | Endpoint still returns 200 (auth hook is NOT invoked) |
 | 10 | Handler is never invoked | Verify via spy/mock that `handle_call` was not called for any of the above |
 | 11 | Errors omit `errors` key when valid | Response is exactly `{"valid": true}`; no `errors: []` |
+| 12 | `ValidateResult` and `ValidationFailure` are importable from the package root | Import both from the package root in a fresh module; assert they resolve. Skip only where the language has no type surface. |
+| 13 | Tool whose `inputSchema` cannot be compiled | `200 {"valid": false, "errors": [{"path": "", "keyword": "schema", "message": "Invalid schema: …"}]}` — never 5xx, never `valid: true` |
 
 ## References
 

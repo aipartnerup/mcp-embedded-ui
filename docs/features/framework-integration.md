@@ -136,6 +136,11 @@ never need to reach into internal modules:
 | `create_mount`    | Function              | Tier 3 mount helper                              |
 | `build_mcp_ui_routes` | Function (deprecated) | Legacy alias for `build_ui_routes` (see Backward Compatibility) |
 
+F7 additionally specifies `ValidateResult` and `ValidationFailure` as exported
+response types. They are listed there rather than here because they belong to
+the validation endpoint's contract, not to framework integration; the eight
+symbols below are the framework-integration surface only.
+
 All eight symbols must be importable via a single import from the
 package root:
 
@@ -148,8 +153,24 @@ from mcp_embedded_ui import (
     build_ui_routes,
     create_app,
     create_mount,
+    build_mcp_ui_routes,  # deprecated alias, exported for compatibility
 )
 ```
+
+### Not Part of the Public Surface
+
+Template rendering (`render_explorer_html` / `renderExplorerHtml`) and the raw
+template string (`EXPLORER_HTML_TEMPLATE`) are **implementation details** and
+MUST NOT be exported from the package root.
+
+Callers customise the page through `title`, `project_name` and `project_url`.
+Exporting the renderer instead would make every template-variable rename, every
+change to escaping, and every adjustment to substitution order a breaking
+change — in exchange for a capability no known caller uses.
+
+Python and Rust already treat these as private (`_EXPLORER_HTML_TEMPLATE`; a
+non-`pub` module respectively). TypeScript exports both; they are deprecated
+and scheduled for removal.
 
 ## Backward Compatibility
 
@@ -173,12 +194,28 @@ bump following the release that introduces `build_ui_routes()`.
 
 ## Cross-Language Mapping
 
-| Language   | `build_ui_routes`              | `create_app`                   | `create_mount`                   |
-|------------|--------------------------------|--------------------------------|----------------------------------|
-| Python     | `list[Route]`                  | `ASGIApp` (Starlette)          | `Mount`                          |
-| TypeScript | `Route[]` (`buildUIRoutes`)    | `createHandler()` → Web Fetch handler | `createNodeHandler({prefix})` → Node handler |
-| Go         | `[]Route` / `http.Handler`     | `http.Handler`                 | `mux.Handle(prefix, ...)`        |
-| Rust       | `axum::Router`                 | `axum::Router`                 | `.nest(prefix, ...)`             |
+Every cell is **the exported symbol → what it returns**. Mixing symbol
+names and return types in one column is what lets a doc example drift
+into calling something that does not exist, so keep both halves.
+
+| Language | Tier 1 | Tier 2 | Tier 3 |
+|----------|--------|--------|--------|
+| Python | `build_ui_routes(...)` → `list[Route]` | `create_app(...)` → `ASGIApp` (Starlette) | `create_mount(prefix="/explorer", *, ...)` → `Mount` |
+| TypeScript | `buildUIRoutes(...)` → `Route[]` | `createHandler(...)` → `(req, prefix?) => Promise<Response>` | `createNodeHandler(..., { prefix })` → `(req, res) => void` |
+| Rust | `build_ui_routes(...)` → `axum::Router` | `create_app(...)` → `axum::Router` | `create_mount(Some("/ui"), ...)` → `axum::Router` (nested) |
+| Go (planned) | `BuildUIRoutes(...)` → `[]Route` | `CreateApp(...)` → `http.Handler` | `CreateMount(prefix, ...)` → `http.Handler` |
+
+**TypeScript is the one deliberate naming divergence**: it exports
+`createHandler` / `createNodeHandler` rather than `createApp` /
+`createMount`, because the two runtimes it targets (Web Fetch and Node
+`http`) need different handler shapes and neither is an "app". Python
+and Rust both use the canonical spec names. Anything else that differs
+is drift, not idiom.
+
+`prefix` is a positional argument with a default of `/explorer` where
+the language allows one; Rust expresses the default as `Option<&str>`
+(`None` → `/explorer`) and TypeScript carries it in the config object,
+since neither language has keyword arguments with defaults.
 
 ## Test Criteria
 

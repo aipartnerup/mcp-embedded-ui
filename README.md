@@ -58,16 +58,20 @@ A cross-language specification and shared assets for embedding a browser-based t
     **SDK:** [aiperceivable/mcp-embedded-ui-rust](https://github.com/aiperceivable/mcp-embedded-ui-rust)
 
     ```toml
-    # cargo.toml
+    # Cargo.toml
     [dependencies]
-    mcp-embedded-ui = "0.4.0"
+    mcp-embedded-ui = "0.5.0"
     ```
 
     ```rust
-    use mcp_embedded_ui::{ExplorerOptions, axum_handler};
+    use std::sync::Arc;
+    use mcp_embedded_ui::{create_mount, ToolsProvider, UiConfig};
 
-    let options = ExplorerOptions::default();
-    let app = Router::new().route("/explorer/*path", get(axum_handler));
+    // Mount the explorer UI at /explorer (pass Some("/ui") for a custom prefix)
+    let tools: Arc<dyn ToolsProvider> = Arc::new(my_tools);
+    let app = create_mount(None, tools, my_handler, UiConfig::default());
+
+    // Visit http://localhost:8000/explorer/
     ```
 
 ## What is this?

@@ -225,28 +225,22 @@ document.documentElement.setAttribute('data-theme',t);})();
     return d.innerHTML;
   }
 
+  // Emit a skeleton of the required keys only. Never fabricate a value:
+  // a type-based placeholder satisfies both `required` and the declared
+  // type, which would make FR-8 validation incapable of failing on a
+  // fresh prefill. See F6/FR-1.
   function defaultFromSchema(schema) {
-    if (!schema || !schema.properties) return {};
     var result = {};
-    var props = schema.properties;
-    for (var key in props) {
-      if (!props.hasOwnProperty(key)) continue;
-      var t = props[key].type;
-      if (props[key]['default'] != null) {
-        result[key] = props[key]['default'];
-      } else if (t === 'string') {
-        result[key] = '';
-      } else if (t === 'number' || t === 'integer') {
-        result[key] = 0;
-      } else if (t === 'boolean') {
-        result[key] = false;
-      } else if (t === 'array') {
-        result[key] = [];
-      } else if (t === 'object') {
-        result[key] = {};
-      } else {
-        result[key] = null;
-      }
+    if (!schema) return result;
+    var required = schema.required;
+    if (!required || !required.length) return result;
+    var props = schema.properties || {};
+    for (var i = 0; i < required.length; i++) {
+      var key = required[i];
+      var prop = props.hasOwnProperty(key) ? props[key] : null;
+      result[key] = (prop && prop['default'] !== undefined)
+        ? prop['default']
+        : null;
     }
     return result;
   }

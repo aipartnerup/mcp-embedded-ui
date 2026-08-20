@@ -6,7 +6,7 @@
 
 An interactive console embedded in the tool detail panel that lets users
 compose JSON input, execute a tool, and inspect the result -- all from the
-browser. The console generates default input from the tool's `inputSchema`,
+browser. The console generates a skeleton input from the tool's `inputSchema`,
 sends the request through the execution API (F3), and renders the response
 in two complementary views (parsed result and raw MCP envelope). A cURL
 command is generated for every execution so users can reproduce calls
@@ -18,7 +18,7 @@ gracefully replaces the console with a disabled message.
 
 ## Scope
 
-- JSON input editor with schema-based default value generation.
+- JSON input editor pre-filled with a skeleton of the schema's required keys.
 - Execute button with loading state and disabled-execution detection.
 - Result display with two tabs: Result and Raw MCP.
 - cURL command generation with copy-to-clipboard.
@@ -30,21 +30,37 @@ gracefully replaces the console with a disabled message.
 ### FR-1: Input Editor
 
 The Try-It console displays a `<textarea>` pre-filled with a JSON object
-whose keys and default values are derived from `inputSchema.properties`:
+that acts as a **skeleton** for a valid call. It contains exactly the keys
+listed in `inputSchema.required` -- no more:
 
-- For each property in the schema, the default value is determined by:
-  1. If the property has an explicit `default` value in the schema, use it.
-  2. Otherwise, generate a type-based default:
-     - `"string"` --> `""`
-     - `"number"` / `"integer"` --> `0`
-     - `"boolean"` --> `false`
-     - `"array"` --> `[]`
-     - `"object"` --> `{}`
-     - Unknown or missing type --> `null`
+- For each name in `required`:
+  1. If `properties[name]` declares an explicit `default`, use it --
+     including falsy values such as `0`, `false`, `""`, and `null`.
+  2. Otherwise emit `null`.
+- Key order is **unspecified**. Implementations SHOULD emit keys in the
+  order `required` lists them, but MUST NOT be tested on it: JavaScript
+  objects hoist integer-like keys (`"2"` sorts before `"zebra"`) and Go
+  maps serialise in lexicographic order, so no cross-language guarantee
+  is possible. Tests MUST compare parsed objects, not JSON strings.
+- Names in `required` with no entry in `properties` still emit `null`.
+- Properties **not** listed in `required` are not emitted, even when they
+  declare a `default`. The full schema is already displayed directly above
+  the editor (F1), and omitting them keeps the prefill bounded by
+  `required.length` for any schema.
+- Generation does **not** recurse into nested object properties.
+- A schema with no `required`, or an empty `required`, prefills `{}`.
 - The generated JSON is pretty-printed (2-space indent) in the textarea.
 - On every execution attempt, the textarea content is parsed with
   `JSON.parse()`. If parsing fails, an inline error message is displayed
   below the textarea and the request is **not** sent.
+
+**Rationale.** The prefill supplies structure, never values. A type-based
+placeholder (`""`, `0`, `false`) is not "unset" -- it is a specific and
+usually wrong value that satisfies both `required` and the declared type,
+which makes the FR-8 Validate button incapable of failing on a fresh
+prefill for any schema. `null` supplies the key without asserting a value,
+and the validator rejects it wherever the schema does not admit it. Where
+the schema *does* admit null, reporting the input as valid is correct.
 
 ### FR-2: Execute Button
 
@@ -199,7 +215,7 @@ refreshing the page clears the token.
 
 | # | Assertion | Method |
 |---|-----------|--------|
-| TC-1 | Default values are correctly generated from `inputSchema` properties: string, number, boolean, array, object, and explicit defaults. | Unit test: provide schema, assert generated JSON matches expected defaults. |
+| TC-1 | The prefill contains exactly the keys listed in `required`; each value is the property's declared `default` when present -- including falsy ones such as `0`, `false`, `""` and `null` -- and `null` otherwise. | Unit test: provide schema, assert generated JSON matches the expected skeleton. |
 | TC-2 | Execute button is disabled and shows "Executing..." during an in-flight request. | UI test: trigger execution, assert button disabled state and text before response arrives. |
 | TC-3 | Execute button re-enables after response or error. | UI test: complete request, assert button is enabled with "Execute" text. |
 | TC-4 | Result tab shows parsed/pretty-printed content extracted from MCP response. | UI test: execute tool returning JSON text, assert formatted output in Result tab. |
@@ -215,3 +231,7 @@ refreshing the page clears the token.
 | TC-14 | Validate button is visible even when `{{ALLOW_EXECUTE}}` is `false`. | UI test: render with execute disabled, assert Validate button is present and Execute is hidden. |
 | TC-15 | Valid input shows the green "Input is valid." line. | UI test: provide schema-conforming JSON, click Validate, assert green confirmation. |
 | TC-16 | Invalid input lists `<path>: <message>` per error. | UI test: omit a required field, click Validate, assert red panel lists `/<field>: is required`. |
+| TC-17 | A schema with no `required`, or an empty `required`, prefills `{}`. | Unit test: provide schema without `required`, assert generated JSON is an empty object. |
+| TC-18 | Optional properties never appear in the prefill, even when they declare a `default`. | Unit test: provide schema with a defaulted optional property, assert the key is absent. |
+| TC-19 | A name in `required` with no matching entry in `properties` prefills as `null`; nested object properties are not recursed into. | Unit test: provide schema with an orphan required name and a nested object, assert both yield `null`. |
+| TC-20 | Clicking Validate on an untouched prefill reports the input as invalid whenever a required property has no `default`. | Integration test: schema with required `type: "string"` and no `default`, click Validate without editing, assert `valid: false` and the error path is rendered. |
